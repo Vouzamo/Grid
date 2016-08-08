@@ -1,0 +1,254 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>three.js webgl - materials - anisotropic texture filtering</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style>
+        body {
+            color: #000;
+            font-family: Monospace;
+            font-size: 13px;
+            text-align: center;
+            background-color: #fff;
+            margin: 0px;
+            padding: 0px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <script src="http://threejs.org/build/three.js"></script>
+    <script src="http://threejs.org/examples/js/controls/FlyControls.js"></script>
+    <script src="http://threejs.org/examples/js/shaders/CopyShader.js"></script>
+    <script src="http://threejs.org/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="http://threejs.org/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="http://threejs.org/examples/js/postprocessing/MaskPass.js"></script>
+    <script src="http://threejs.org/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="http://threejs.org/examples/js/postprocessing/FilmPass.js"></script>
+
+    <script id="vertexShader" type="x-shader/x-vertex">
+
+        uniform vec2 uvScale;
+        varying vec2 vUv;
+
+        void main()
+        {
+
+        vUv = uvScale * uv;
+        vec4 mvPosition = modelViewMatrix * vec4( position, 1.0 );
+        gl_Position = projectionMatrix * mvPosition;
+
+        }
+
+    </script>
+    <script id="fragmentShader" type="x-shader/x-fragment">
+
+        uniform float time;
+        uniform vec2 resolution;
+
+        uniform float fogDensity;
+        uniform vec3 fogColor;
+
+        uniform sampler2D texture1;
+        uniform sampler2D texture2;
+
+        varying vec2 vUv;
+
+        void main( void ) {
+
+        vec2 position = -1.0 + 2.0 * vUv;
+
+        vec4 noise = texture2D( texture1, vUv );
+        vec2 T1 = vUv + vec2( 1.5, -1.5 ) * time  *0.02;
+        vec2 T2 = vUv + vec2( -0.5, 2.0 ) * time * 0.01;
+
+        T1.x += noise.x * 2.0;
+        T1.y += noise.y * 2.0;
+        T2.x -= noise.y * 0.2;
+        T2.y += noise.z * 0.2;
+
+        float p = texture2D( texture1, T1 * 2.0 ).a;
+
+        vec4 color = texture2D( texture2, T2 * 2.0 );
+        vec4 temp = color * ( vec4( p, p, p, p ) * 2.0 ) + ( color * color - 0.1 );
+
+        if( temp.r > 1.0 ){ temp.bg += clamp( temp.r - 2.0, 0.0, 100.0 ); }
+        if( temp.g > 1.0 ){ temp.rb += temp.g - 1.0; }
+        if( temp.b > 1.0 ){ temp.rg += temp.b - 1.0; }
+
+        gl_FragColor = temp;
+
+        float depth = gl_FragCoord.z / gl_FragCoord.w;
+        const float LOG2 = 1.442695;
+        float fogFactor = exp2( - fogDensity * fogDensity * depth * depth * LOG2 );
+        fogFactor = 1.0 - clamp( fogFactor, 0.0, 1.0 );
+
+        gl_FragColor = mix( gl_FragColor, vec4( fogColor, gl_FragColor.w ), fogFactor );
+
+        }
+
+    </script>
+
+    <script>
+			var SCREEN_WIDTH = window.innerWidth;
+			var SCREEN_HEIGHT = window.innerHeight;
+
+			var container;
+
+			var camera, controls, scene, renderer;
+
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+
+            var uniforms;
+
+            var clock = new THREE.Clock();
+
+			init();
+			animate();
+
+			function init() {
+				container = document.createElement('div');
+				document.body.appendChild(container);
+
+				// Camera
+
+				camera = new THREE.PerspectiveCamera(25, SCREEN_WIDTH / SCREEN_HEIGHT, 1, 250);
+				camera.position.set(0, 0, 0);
+
+                // Scene
+
+				scene = new THREE.Scene();
+				scene.fog = new THREE.Fog(0x000000, 1, 25000);
+
+                // Lighting
+
+				scene.add(new THREE.AmbientLight(0xeef0ff));
+
+				var directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+				directionalLight.position.set(0, 0, 50);
+				//scene.add(directionalLight);
+
+                // Controls
+
+                controls = new THREE.FlyControls(camera);
+				controls.movementSpeed = 25;
+                controls.rollSpeed = Math.PI / 12;
+				controls.domElement = container;
+
+                // Objects
+
+                var basicMaterial = new THREE.MeshBasicMaterial({ color: 0x0099ff, transparent: true, opacity: 0.5 });
+
+                var textureLoader = new THREE.TextureLoader();
+
+                uniforms = {
+
+					fogDensity: { value: 0.45 },
+					fogColor:   { value: new THREE.Vector3( 0, 0, 0 ) },
+					time:       { value: 1.0 },
+					resolution: { value: new THREE.Vector2() },
+					uvScale:    { value: new THREE.Vector2( 3.0, 1.0 ) },
+					texture1:   { value: textureLoader.load( "/images/cloud.png" ) },
+					texture2:   { value: textureLoader.load( "/images/lavatile.jpg" ) }
+
+				};
+                uniforms.texture1.value.wrapS = uniforms.texture1.value.wrapT = THREE.RepeatWrapping;
+				uniforms.texture2.value.wrapS = uniforms.texture2.value.wrapT = THREE.RepeatWrapping;
+
+                var shaderMaterial = new THREE.ShaderMaterial( {
+
+					uniforms: uniforms,
+					vertexShader: document.getElementById( 'vertexShader' ).textContent,
+					fragmentShader: document.getElementById( 'fragmentShader' ).textContent
+
+				});
+
+				var sphere = new THREE.SphereGeometry(0.1, 32, 32);
+                var cube = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+
+                for(var x = -100; x <= 100; x += 10)
+                {
+                    for(var y = -100; y <= 100; y += 10)
+                    {
+                        for(var z = -100; z <= 100; z += 10)
+                        {
+                            if(x !== 0 || y !== 0 || z !== 0) {
+                                if(getRandomInt(1, 100) === 1) {
+                                    var mesh = new THREE.Mesh(sphere, basicMaterial);
+                                    mesh.position.set(x, y, z);
+                                    mesh.scale.set(10, 10, 10);
+
+                                    scene.add(mesh);
+                                } else {
+                                    var light = new THREE.PointLight(0xffffff, 2, 50);
+                                    light.position.set(x, y, z);
+
+				                    light.add(new THREE.Mesh(sphere, new THREE.MeshBasicMaterial({ color: 0xffffff })));
+
+				                    scene.add(light);
+                                }
+                            }
+                        }
+                    }
+                }
+
+				// Renderer
+
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+
+				renderer.setClearColor(scene.fog.color);
+				renderer.setPixelRatio(window.devicePixelRatio);
+				renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+				renderer.autoClear = false;
+
+				container.appendChild(renderer.domElement);
+
+                // Events
+                window.addEventListener( 'resize', resize, false );
+
+                // Composer
+                composer = new THREE.EffectComposer(renderer);
+                var renderPass = new THREE.RenderPass(scene, camera);
+                renderPass.renderToScreen = true;
+                composer.addPass(renderPass);
+			}
+
+			function resize(event) {
+				SCREEN_HEIGHT = window.innerHeight;
+				SCREEN_WIDTH  = window.innerWidth;
+
+				renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
+
+				camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+				camera.updateProjectionMatrix();
+
+				composer.reset();
+			}
+
+			function animate() {
+				requestAnimationFrame(animate);
+
+				render();
+			}
+
+			function render() {
+				var delta = clock.getDelta();
+
+                uniforms.time.value += delta;
+
+                controls.update(delta);
+
+                renderer.clear();
+                composer.render(delta);
+			}
+
+            function getRandomInt(min, max) {
+                min = Math.ceil(min);
+                max = Math.floor(max);
+                return Math.floor(Math.random() * (max - min)) + min;
+            }
+    </script>
+</body>
+</html>
