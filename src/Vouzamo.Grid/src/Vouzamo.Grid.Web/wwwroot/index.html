@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <style>
         body {
-            color: #000;
+            color: #fff;
             font-family: Monospace;
             font-size: 13px;
             text-align: center;
-            background-color: #fff;
+            background-color: #000;
             margin: 0px;
             padding: 0px;
             overflow: hidden;
@@ -27,12 +27,11 @@
 
 			var container;
 
-			var camera, group, controls, scene, renderer;
+			var camera, particleSystem, itemGroup, controls, scene, hud, hudCamera, renderer;
 
 			var windowHalfX = window.innerWidth / 2;
 			var windowHalfY = window.innerHeight / 2;
 
-			var tick = 0;
             var clock = new THREE.Clock();
 
 			init();
@@ -45,14 +44,17 @@
 			    // Options
 				var size = 15;
 
-				// Camera
-                camera = new THREE.PerspectiveCamera(30, SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 250);
-				camera.position.set(0, 0, 0);
+				// Cameras
+                camera = new THREE.PerspectiveCamera(30, SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 55);
+                camera.position.set(0, 0, 0);
 
-                // Scene
+                hudCamera = new THREE.OrthographicCamera(SCREEN_WIDTH / -2, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_HEIGHT / -2, 1, 1000)
+
+                // Scenes
 				scene = new THREE.Scene();
-                scene.background
-				scene.fog = new THREE.Fog(0x000000, 5, size);
+				scene.fog = new THREE.Fog(0x000000, 1, 60);
+
+				hud = new THREE.Scene();
 
                 // Controls
                 controls = new THREE.FlyControls(camera);
@@ -61,86 +63,128 @@
                 controls.domElement = container;
                 controls.dragToLook = true;
 
-			    // Particles
-				var particleGeometry = new THREE.SphereGeometry(0.01, 16, 16);
-				var particleMaterial = new THREE.MeshBasicMaterial({ color: 0x0099ff, transparent: true, opacity: 0.1 })
+			    // Skybox
+                var skyboxName = 'dark';
+                var skyboxFormat = 'png';
+                var skyboxTextures = [
+                    'textures/' + skyboxName + '/right.' + skyboxFormat,
+                    'textures/' + skyboxName + '/left.' + skyboxFormat,
+                    'textures/' + skyboxName + '/up.' + skyboxFormat,
+                    'textures/' + skyboxName + '/down.' + skyboxFormat,
+                    'textures/' + skyboxName + '/front.' + skyboxFormat,
+                    'textures/' + skyboxName + '/back.' + skyboxFormat,
+                ];
 
-				group = new THREE.Group();
+                var skybox = new THREE.CubeTextureLoader().load(skyboxTextures);
+                skybox.format = THREE.RGBFormat;
+
+                scene.background = skybox;
+
+			    // Particles
+				var particleMaterial = new THREE.PointsMaterial({
+				    color: 0xffffff,
+				    size: 0.1,
+				    map: new THREE.TextureLoader().load('textures/particle.png'),
+				    transparent: true,
+                    alphaTest: 0.5
+				});
+
+				var particles = new THREE.Geometry();
+
 				for (var x = -size; x <= size; x++) {
 				    for (var y = -size; y <= size; y++) {
 				        for (var z = -size; z <= size; z++) {
-				            var particle = new THREE.Mesh(particleGeometry, particleMaterial);
-				            particle.position.set(x, y, z);
-				            particle.matrixAutoUpdate = false;
-				            particle.updateMatrix();
+				            var particle = new THREE.Vector3(x, y, z);
 
-				            group.add(particle);
+				            particles.vertices.push(particle);
 				        }
 				    }
 				}
-			    scene.add(group);
+
+				particleSystem = new THREE.Points(particles, particleMaterial);
+			    scene.add(particleSystem);
 
 			    // Items
-                var itemGroup = new THREE.Group();
+                var itemMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.5 });
+                var itemGeometry = new THREE.SphereGeometry(0.1, 32, 32)
+
+                itemGroup = new THREE.Group();
                 for (var i = 0; i < (size); i++) {
-                    var item = new THREE.Mesh(new THREE.SphereGeometry(0.1, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 }));
+                    var item = new THREE.Mesh(itemGeometry, itemMaterial);
                     item.position.x = getRandomInt(-size, size);
                     item.position.y = getRandomInt(-size, size);
                     item.position.z = getRandomInt(-size, size);
-                    item.scale.set(1, 1, 1);
 
-                    console.log(item.position);
-
-                    scene.add(item);
+                    itemGroup.add(item);
                 }
                 scene.add(itemGroup);
 
-				// Renderer
+                var hudTest = new THREE.Mesh(itemGeometry, itemMaterial);
+                hudTest.scale.set(2000, 2000, 2000);
+                hudTest.position.set(0, 0, -5);
 
-                renderer = new THREE.WebGLRenderer({ antialias: true });
+                hud.add(hudTest);
+
+				// Renderer
+                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                renderer.setClearColor(0x000000, 0);
                 renderer.gammaInput = true;
                 renderer.gammaOutput = true;
 				renderer.setPixelRatio(window.devicePixelRatio);
 				renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+				renderer.autoClear = false;
 
 				container.appendChild(renderer.domElement);
 
                 // Events
-                window.addEventListener( 'resize', resize, false );
+                window.addEventListener('resize', resize, false );
 			}
 
 			function resize(event) {
 				SCREEN_HEIGHT = window.innerHeight;
 				SCREEN_WIDTH  = window.innerWidth;
 
-				renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
+				renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 				camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
 				camera.updateProjectionMatrix();
+
+				hudCamera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
+				hudCamera.updateProjectionMatrix();
 			}
 
 			function animate() {
-				requestAnimationFrame(animate);
+			    requestAnimationFrame(animate);
 
 				var delta = clock.getDelta();
 
-				tick += delta;
-				if (tick < 0) tick = 0;
-
-				var groupCameraOffset = camera.position.distanceTo(group.position)
-				if (groupCameraOffset > 2) {
-				    group.position.x = Math.floor(camera.position.x);
-				    group.position.y = Math.floor(camera.position.y);
-				    group.position.z = Math.floor(camera.position.z);
-				}
-
+                // Update Controls
 				controls.update(delta);
 
+                // Particles
+				var particleSystemCameraOffset = camera.position.distanceTo(particleSystem.position)
+				if (particleSystemCameraOffset > 2) {
+				    particleSystem.position.x = Math.floor(camera.position.x);
+				    particleSystem.position.y = Math.floor(camera.position.y);
+				    particleSystem.position.z = Math.floor(camera.position.z);
+				}
+
+                // Items
+				itemGroup.children.forEach(function (child) {
+				    child.rotation.x += 0.01;
+				    child.rotation.y += 0.01;
+				    child.rotation.z += 0.01;
+				});
+
+                // Render
 				render();
 			}
 
 			function render() {
-                renderer.render(scene, camera);
+			    renderer.clear();
+			    renderer.render(scene, camera);
+			    renderer.clearDepth();
+			    renderer.render(hud, hudCamera);
 			}
 
             function getRandomInt(min, max) {
