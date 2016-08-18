@@ -183,7 +183,7 @@
 				        var hudPosition = findHudPosition(child, camera);
 				        hudPosition.x *= (SCREEN_WIDTH / 2);
 				        hudPosition.y *= (SCREEN_HEIGHT / 2);
-				        hudPosition.z = child.position.z;
+				        hudPosition.z = 1;
                         
 				        if (hudPosition.distanceTo(centerPoint) <= 400) {
 				            child.hud.lookAt(hudCamera);
