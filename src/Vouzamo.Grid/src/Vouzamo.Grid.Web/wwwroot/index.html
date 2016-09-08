@@ -1,224 +1,276 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>three.js webgl - materials - anisotropic texture filtering</title>
+    <title>Grid PoC</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
     <style>
         body {
-            color: #fff;
-            font-family: Monospace;
-            font-size: 13px;
-            text-align: center;
-            background-color: #000;
             margin: 0px;
             padding: 0px;
             overflow: hidden;
         }
     </style>
-</head>
-<body>
     <script src="http://threejs.org/build/three.js"></script>
     <script src="http://threejs.org/examples/js/controls/FlyControls.js"></script>
-
+</head>
+<body>
     <script>
-			var SCREEN_WIDTH = window.innerWidth;
-			var SCREEN_HEIGHT = window.innerHeight;
+            var container, screenWidth, screenHeight;
+            var sceneMain, sceneHud;
+            var cameraPerspective, cameraOrthographic;
+            var controls, renderer, clock;
+            var itemGroup, particleGroup, hudGroup;
 
-			var container;
+            init();
+            animate();
 
-			var camera, particleSystem, itemGroup, controls, scene, hud, hudCamera, renderer;
+            function init() {
+                container = document.createElement('div');
+                document.body.appendChild(container);
 
-            var clock = new THREE.Clock();
+                clock = new THREE.Clock();
 
-			init();
-			animate();
+                initRenderer();
+                initCameras();
+                initWindow();
+                initSceneMain();
+                initSceneHud();
+                initControls(cameraPerspective);
 
-			function init() {
-				container = document.createElement('div');
-				document.body.appendChild(container);
+                initPointCloud();
+                initData();
 
-			    // Options
-				var size = 15;
+                window.addEventListener('resize', initWindow, false);
+            }
 
-				// Cameras
-                camera = new THREE.PerspectiveCamera(30, SCREEN_WIDTH / SCREEN_HEIGHT, 0.1, 55);
-                camera.position.set(0, 0, 0);
+            function animate() {
+                requestAnimationFrame(animate); // This will handle the callback
 
-                hudCamera = new THREE.OrthographicCamera(SCREEN_WIDTH / -2, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, SCREEN_HEIGHT / -2, 1, 1000);
+                var delta = clock.getDelta();
 
-                // Scenes
-				scene = new THREE.Scene();
-				scene.fog = new THREE.Fog(0x000000, 1, 60);
+                // Any changes to the scene will be initiated from here
+                controls.update(delta);
+                updatePointCloud();
+                updateData();
+                updateHudData();
 
-				hud = new THREE.Scene();
-				var ambientLight = new THREE.AmbientLight(0xffffff);
-				hud.add(ambientLight);
+                renderScenes();
+            }
 
-                // Controls
-                controls = new THREE.FlyControls(camera);
-				controls.movementSpeed = 5;
-                controls.rollSpeed = Math.PI / 12;
-                controls.domElement = container;
-                controls.dragToLook = true;
+            function initRenderer() {
+                renderer = new THREE.WebGLRenderer({
+                    antialias: true,
+                    alpha: true
+                });
 
-			    // Skybox
-                var skyboxName = 'dark';
+                renderer.setClearColor(0x000000, 0);
+                renderer.autoClear = false;
+                renderer.setPixelRatio(window.devicePixelRatio);
+
+                container.appendChild(renderer.domElement);
+            }
+
+            function initSceneMain() {
+                sceneMain = new THREE.Scene();
+                sceneMain.fog = new THREE.Fog(0x000000, 1, 60);
+
+                initSkybox(sceneMain);
+            }
+
+            function initSceneHud() {
+                sceneHud = new THREE.Scene();
+                sceneHud.add(new THREE.AmbientLight(0xffffff));
+
+                initHudData();
+            }
+
+            function initSkybox(scene) {
+                var skyboxPath = 'textures/skybox/';
                 var skyboxFormat = 'png';
+
                 var skyboxTextures = [
-                    'textures/' + skyboxName + '/right.' + skyboxFormat,
-                    'textures/' + skyboxName + '/left.' + skyboxFormat,
-                    'textures/' + skyboxName + '/up.' + skyboxFormat,
-                    'textures/' + skyboxName + '/down.' + skyboxFormat,
-                    'textures/' + skyboxName + '/front.' + skyboxFormat,
-                    'textures/' + skyboxName + '/back.' + skyboxFormat,
+                    skyboxPath + 'right.' + skyboxFormat,
+                    skyboxPath + 'left.' + skyboxFormat,
+                    skyboxPath + 'up.' + skyboxFormat,
+                    skyboxPath + 'down.' + skyboxFormat,
+                    skyboxPath + 'front.' + skyboxFormat,
+                    skyboxPath + 'back.' + skyboxFormat,
                 ];
 
                 var skybox = new THREE.CubeTextureLoader().load(skyboxTextures);
                 skybox.format = THREE.RGBFormat;
 
                 scene.background = skybox;
+            }
 
-			    // Particles
-				var particleMaterial = new THREE.PointsMaterial({
-				    color: 0xffffff,
-				    size: 0.1,
-				    map: new THREE.TextureLoader().load('textures/particle.png'),
-				    transparent: true,
+            function initControls(target) {
+                controls = new THREE.FlyControls(target);
+                controls.movementSpeed = 5;
+                controls.rollSpeed = Math.PI / 12;
+                controls.domElement = container;
+                controls.dragToLook = true;
+            }
+
+            function initCameras() {
+                cameraPerspective = new THREE.PerspectiveCamera(
+                    30,
+                    1600 / 900,
+                    0.1, 55
+                );
+
+                cameraOrthographic = new THREE.OrthographicCamera(
+                    1600 / -2,
+                    1600 / 2,
+                    900 / 2,
+                    900 / -2,
+                    1, 1000
+                );
+            }
+
+            function renderScenes() {
+                renderer.clear();
+                renderer.render(sceneMain, cameraPerspective);
+                renderer.clearDepth();
+                renderer.render(sceneHud, cameraOrthographic);
+            }
+
+            function initWindow() {
+                screenWidth = window.innerWidth;
+                screenHeight = window.innerHeight;
+
+                renderer.setSize(screenWidth, screenHeight);
+                resetCameras();
+            }
+
+            function resetCameras() {
+                cameraPerspective.aspect = screenWidth / screenHeight;
+                cameraPerspective.updateProjectionMatrix();
+
+                cameraOrthographic.left = screenWidth / -2;
+                cameraOrthographic.right = screenWidth / 2;
+                cameraOrthographic.top = screenHeight / 2;
+                cameraOrthographic.bottom = screenHeight / -2;
+                cameraOrthographic.updateProjectionMatrix();
+            }
+
+            function initPointCloud() {
+                var points = new THREE.Geometry();
+                var material = new THREE.PointsMaterial({
+                    color: 0xffffff,
+                    size: 0.1,
+                    map: new THREE.TextureLoader().load('textures/particle.png'),
+                    transparent: true,
                     alphaTest: 0.5
-				});
+                });
 
-				var particles = new THREE.Geometry();
+                var size = 15;
 
-				for (var x = -size; x <= size; x++) {
-				    for (var y = -size; y <= size; y++) {
-				        for (var z = -size; z <= size; z++) {
-				            var particle = new THREE.Vector3(x, y, z);
+                for (var x = -size; x <= size; x++) {
+                    for (var y = -size; y <= size; y++) {
+                        for (var z = -size; z <= size; z++) {
+                            var point = new THREE.Vector3(x, y, z);
+                            points.vertices.push(point);
+                        }
+                    }
+                }
 
-				            particles.vertices.push(particle);
-				        }
-				    }
-				}
+                particleGroup = new THREE.Points(points, material);
+                sceneMain.add(particleGroup);
+            }
 
-				particleSystem = new THREE.Points(particles, particleMaterial);
-			    scene.add(particleSystem);
+            function updatePointCloud() {
+                var distance = cameraPerspective.position.distanceTo(particleGroup.position);
 
-			    // Items
-                var itemMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.5 });
-                var itemGeometry = new THREE.SphereGeometry(0.1, 32, 32);
+                if (distance > 2) {
+                    var x = Math.floor(cameraPerspective.position.x);
+                    var y = Math.floor(cameraPerspective.position.y);
+                    var z = Math.floor(cameraPerspective.position.z);
 
-                var hudMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+                    particleGroup.position.set(x, y, z);
+                }
+            }
+
+            function initData() {
+                itemGroup = new THREE.Group();
+
+                var geometry = new THREE.SphereGeometry(0.1, 32, 32);
+                var material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, transparent: true, opacity: 0.5 });
+
+                for (var i = 0; i < 15; i++) {
+                    var x = getRandom(-20, 20);
+                    var y = getRandom(-20, 20);
+                    var z = getRandom(-20, 20);
+
+                    var data = new THREE.Mesh(geometry, material);
+                    data.position.set(x, y, z);
+
+                    addHudData(data);
+
+                    itemGroup.add(data);
+                }
+
+                sceneMain.add(itemGroup);
+            }
+
+            function updateData() {
+                itemGroup.children.forEach(function (data) {
+                    data.rotation.x += 0.01;
+                    data.rotation.y += 0.01;
+                    data.rotation.z += 0.01;
+                });
+            }
+
+            function initHudData() {
+                hudGroup = new THREE.Group();
+
+                sceneHud.add(hudGroup);
+            }
+
+            function addHudData(trackedItem) {
                 var hudGeometry = new THREE.ConeGeometry(0.1, 0.2, 16);
                 hudGeometry.rotateX(Math.PI * 0.5);
+                var hudMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, side: THREE.DoubleSide });
 
-                itemGroup = new THREE.Group();
-                for (var i = 0; i < (size); i++) {
-                    var item = new THREE.Mesh(itemGeometry, itemMaterial);
-                    item.position.x = getRandomInt(-size, size);
-                    item.position.y = getRandomInt(-size, size);
-                    item.position.z = getRandomInt(-size, size);
 
-                    item.hud = new THREE.Mesh(hudGeometry, hudMaterial);
-                    item.hud.scale.set(200, 200, 200);
-                    item.hud.visible = false;
-                    
-                    itemGroup.add(item);
-                    hud.add(item.hud);
-                }
-                scene.add(itemGroup);
+                var hudData = new THREE.Mesh(hudGeometry, hudMaterial);
 
-				// Renderer
-                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-                renderer.setClearColor(0x000000, 0);
-                renderer.gammaInput = true;
-                renderer.gammaOutput = true;
-				renderer.setPixelRatio(window.devicePixelRatio);
-				renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
-				renderer.autoClear = false;
+                hudData.scale.set(200, 200, 200);
+                hudData.visible = false;
+                hudData.tracked = trackedItem;
 
-				container.appendChild(renderer.domElement);
+                hudGroup.add(hudData);
+            }
 
-                // Events
-                window.addEventListener('resize', resize, false);
-			}
+            function updateHudData() {
+                var centerPoint = new THREE.Vector3(0, 0, 1);
 
-			function resize(event) {
-				SCREEN_HEIGHT = window.innerHeight;
-				SCREEN_WIDTH  = window.innerWidth;
+                hudGroup.children.forEach(function (data) {
+                    var target = data.tracked;
 
-				renderer.setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+                    if (checkCameraPlane(target, cameraPerspective)) {
+                        var position = findHudPosition(target, cameraPerspective);
 
-				camera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
-				camera.updateProjectionMatrix();
+                        if (position.distanceTo(centerPoint) <= 400) {
+                            data.lookAt(cameraOrthographic);
+                        } else {
+                            data.lookAt(position);
+                            position.clampLength(0, 400);
+                        }
 
-				hudCamera.aspect = SCREEN_WIDTH / SCREEN_HEIGHT;
-				hudCamera.updateProjectionMatrix();
-			}
+                        data.position.set(position.x, position.y, position.z);
+                        data.visible = true;
+                    } else {
+                        data.visible = false;
+                    }
+                });
+            }
 
-			function animate() {
-			    requestAnimationFrame(animate);
+            function getRandom(min, max) {
+                var min = Math.ceil(min);
+                var max = Math.floor(max);
 
-				var delta = clock.getDelta();
-
-                // Update Controls
-				controls.update(delta);
-
-                // Particles
-				var particleSystemCameraOffset = camera.position.distanceTo(particleSystem.position)
-				if (particleSystemCameraOffset > 2) {
-				    particleSystem.position.x = Math.floor(camera.position.x);
-				    particleSystem.position.y = Math.floor(camera.position.y);
-				    particleSystem.position.z = Math.floor(camera.position.z);
-				}
-
-				var centerPoint = new THREE.Vector3(0, 0, 1);
-
-                // Items
-				itemGroup.children.forEach(function (child) {
-				    child.rotation.x += 0.01;
-				    child.rotation.y += 0.01;
-				    child.rotation.z += 0.01;
-
-				    if (checkCameraPlane(child, camera)) {
-				        var hudPosition = findHudPosition(child, camera);
-				        hudPosition.x *= (SCREEN_WIDTH / 2);
-				        hudPosition.y *= (SCREEN_HEIGHT / 2);
-				        hudPosition.z = 1;
-                        
-				        if (hudPosition.distanceTo(centerPoint) <= 400) {
-				            child.hud.lookAt(hudCamera);
-				        } else {
-				            child.hud.lookAt(hudPosition);
-				            hudPosition.clampLength(0, 400);
-				        }
-
-				        child.hud.position.set(hudPosition.x, hudPosition.y, hudPosition.z);
-				        child.hud.visible = true;
-				    } else {
-				        child.hud.visible = false;
-				    }
-				});
-
-                // Render
-				render();
-			}
-
-			function render() {
-			    renderer.clear();
-			    renderer.render(scene, camera);
-
-			    renderer.clearDepth();
-			    renderer.render(hud, hudCamera);
-			}
-
-            function findHudPosition(obj, camera) {
-                var vector = new THREE.Vector3();
-
-                obj.updateMatrixWorld();
-                vector.setFromMatrixPosition(obj.matrixWorld);
-                vector.project(camera);
-
-                return vector;
+                return Math.floor(Math.random() * (max - min)) + min;
             }
 
             function checkCameraPlane(obj, camera) {
@@ -230,24 +282,18 @@
                 return cameraDirection.dot(objectDirection) >= 0;
             }
 
-            function checkFrustrum(obj, camera) {
-                var frustum = new THREE.Frustum();
-                var projScreenMatrix = new THREE.Matrix4();
+            function findHudPosition(obj, camera) {
+                var vector = new THREE.Vector3();
 
-                camera.updateMatrix();
-                camera.updateMatrixWorld();
+                obj.updateMatrixWorld();
+                vector.setFromMatrixPosition(obj.matrixWorld);
+                vector.project(camera);
 
-                projScreenMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+                vector.x *= (screenWidth / 2);
+                vector.y *= (screenHeight / 2);
+                vector.z = 1;
 
-                frustum.setFromMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
-
-                return frustum.containsPoint(obj.position);
-            }
-
-            function getRandomInt(min, max) {
-                min = Math.ceil(min);
-                max = Math.floor(max);
-                return Math.floor(Math.random() * (max - min)) + min;
+                return vector;
             }
     </script>
 </body>
