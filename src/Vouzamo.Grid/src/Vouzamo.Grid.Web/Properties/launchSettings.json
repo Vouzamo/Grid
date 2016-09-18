@@ -18,7 +18,7 @@
     "Vouzamo.Grid.Web": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "http://localhost:5000/api/values",
+      "launchUrl": "http://localhost:5000/api/items/hello/world/1.1,2.2,3.3/4.4",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
