@@ -15,286 +15,336 @@
     <script src="http://threejs.org/examples/js/controls/FlyControls.js"></script>
 </head>
 <body>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
     <script>
-            var container, screenWidth, screenHeight;
-            var sceneMain, sceneHud;
-            var cameraPerspective, cameraOrthographic;
-            var controls, renderer, clock;
-            var itemGroup, particleGroup, hudGroup;
+        var container, screenWidth, screenHeight;
+        var sceneMain, sceneHud;
+        var cameraPerspective, cameraOrthographic;
+        var controls, renderer, clock;
+        var itemGroup, particleGroup, hudGroup, size;
 
+        var grid, path, position, size;
+
+        $(document).ready(function() {
             init();
             animate();
+        });
 
-            function init() {
-                container = document.createElement('div');
-                document.body.appendChild(container);
+        function init() {
+            container = document.createElement('div');
+            document.body.appendChild(container);
 
-                clock = new THREE.Clock();
+            clock = new THREE.Clock();
 
-                initRenderer();
-                initCameras();
-                initWindow();
-                initSceneMain();
-                initSceneHud();
-                initControls(cameraPerspective);
+            size = 15;
 
-                initPointCloud();
-                initData();
+            initRenderer();
+            initCameras();
+            initWindow();
+            initSceneMain();
+            initSceneHud();
+            initControls(cameraPerspective);
 
-                window.addEventListener('resize', initWindow, false);
+            initPointCloud();
+
+            grid = 'default';
+            path = 'home';
+            position = {
+                x: 0,
+                y: 0,
+                z: 0
+            };
+
+            initData();
+
+            window.addEventListener('resize', initWindow, false);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate); // This will handle the callback
+
+            var delta = clock.getDelta();
+
+            // Any changes to the scene will be initiated from here
+            controls.update(delta);
+            updatePointCloud();
+
+            if (cameraPerspective.position.distanceTo(position) >= size) {
+                refreshData(size * 2);
             }
 
-            function animate() {
-                requestAnimationFrame(animate); // This will handle the callback
+            updateData();
+            updateHudData();
 
-                var delta = clock.getDelta();
+            renderScenes();
+        }
 
-                // Any changes to the scene will be initiated from here
-                controls.update(delta);
-                updatePointCloud();
-                updateData();
-                updateHudData();
+        function initRenderer() {
+            renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: true
+            });
 
-                renderScenes();
-            }
+            renderer.setClearColor(0x000000, 0);
+            renderer.autoClear = false;
+            renderer.setPixelRatio(window.devicePixelRatio);
 
-            function initRenderer() {
-                renderer = new THREE.WebGLRenderer({
-                    antialias: true,
-                    alpha: true
-                });
+            container.appendChild(renderer.domElement);
+        }
 
-                renderer.setClearColor(0x000000, 0);
-                renderer.autoClear = false;
-                renderer.setPixelRatio(window.devicePixelRatio);
+        function initSceneMain() {
+            sceneMain = new THREE.Scene();
+            sceneMain.fog = new THREE.Fog(0x000000, 1, 60);
 
-                container.appendChild(renderer.domElement);
-            }
+            initSkybox(sceneMain);
+        }
 
-            function initSceneMain() {
-                sceneMain = new THREE.Scene();
-                sceneMain.fog = new THREE.Fog(0x000000, 1, 60);
+        function initSceneHud() {
+            sceneHud = new THREE.Scene();
+            sceneHud.add(new THREE.AmbientLight(0xffffff));
 
-                initSkybox(sceneMain);
-            }
+            initHudData();
+        }
 
-            function initSceneHud() {
-                sceneHud = new THREE.Scene();
-                sceneHud.add(new THREE.AmbientLight(0xffffff));
+        function initSkybox(scene) {
+            var skyboxPath = 'textures/skybox/';
+            var skyboxFormat = 'png';
 
-                initHudData();
-            }
+            var skyboxTextures = [
+                skyboxPath + 'right.' + skyboxFormat,
+                skyboxPath + 'left.' + skyboxFormat,
+                skyboxPath + 'up.' + skyboxFormat,
+                skyboxPath + 'down.' + skyboxFormat,
+                skyboxPath + 'front.' + skyboxFormat,
+                skyboxPath + 'back.' + skyboxFormat,
+            ];
 
-            function initSkybox(scene) {
-                var skyboxPath = 'textures/skybox/';
-                var skyboxFormat = 'png';
+            var skybox = new THREE.CubeTextureLoader().load(skyboxTextures);
+            skybox.format = THREE.RGBFormat;
 
-                var skyboxTextures = [
-                    skyboxPath + 'right.' + skyboxFormat,
-                    skyboxPath + 'left.' + skyboxFormat,
-                    skyboxPath + 'up.' + skyboxFormat,
-                    skyboxPath + 'down.' + skyboxFormat,
-                    skyboxPath + 'front.' + skyboxFormat,
-                    skyboxPath + 'back.' + skyboxFormat,
-                ];
+            scene.background = skybox;
+        }
 
-                var skybox = new THREE.CubeTextureLoader().load(skyboxTextures);
-                skybox.format = THREE.RGBFormat;
+        function initControls(target) {
+            controls = new THREE.FlyControls(target);
+            controls.movementSpeed = 5;
+            controls.rollSpeed = Math.PI / 12;
+            controls.domElement = container;
+            controls.dragToLook = true;
+        }
 
-                scene.background = skybox;
-            }
+        function initCameras() {
+            cameraPerspective = new THREE.PerspectiveCamera(
+                30,
+                1600 / 900,
+                0.1,
+                55
+            );
 
-            function initControls(target) {
-                controls = new THREE.FlyControls(target);
-                controls.movementSpeed = 5;
-                controls.rollSpeed = Math.PI / 12;
-                controls.domElement = container;
-                controls.dragToLook = true;
-            }
+            cameraOrthographic = new THREE.OrthographicCamera(
+                1600 / -2,
+                1600 / 2,
+                900 / 2,
+                900 / -2,
+                1,
+                1000
+            );
+        }
 
-            function initCameras() {
-                cameraPerspective = new THREE.PerspectiveCamera(
-                    30,
-                    1600 / 900,
-                    0.1, 55
-                );
+        function renderScenes() {
+            renderer.clear();
+            renderer.render(sceneMain, cameraPerspective);
+            renderer.clearDepth();
+            renderer.render(sceneHud, cameraOrthographic);
+        }
 
-                cameraOrthographic = new THREE.OrthographicCamera(
-                    1600 / -2,
-                    1600 / 2,
-                    900 / 2,
-                    900 / -2,
-                    1, 1000
-                );
-            }
+        function initWindow() {
+            screenWidth = window.innerWidth;
+            screenHeight = window.innerHeight;
 
-            function renderScenes() {
-                renderer.clear();
-                renderer.render(sceneMain, cameraPerspective);
-                renderer.clearDepth();
-                renderer.render(sceneHud, cameraOrthographic);
-            }
+            renderer.setSize(screenWidth, screenHeight);
+            resetCameras();
+        }
 
-            function initWindow() {
-                screenWidth = window.innerWidth;
-                screenHeight = window.innerHeight;
+        function resetCameras() {
+            cameraPerspective.aspect = screenWidth / screenHeight;
+            cameraPerspective.updateProjectionMatrix();
 
-                renderer.setSize(screenWidth, screenHeight);
-                resetCameras();
-            }
+            cameraOrthographic.left = screenWidth / -2;
+            cameraOrthographic.right = screenWidth / 2;
+            cameraOrthographic.top = screenHeight / 2;
+            cameraOrthographic.bottom = screenHeight / -2;
+            cameraOrthographic.updateProjectionMatrix();
+        }
 
-            function resetCameras() {
-                cameraPerspective.aspect = screenWidth / screenHeight;
-                cameraPerspective.updateProjectionMatrix();
+        function initPointCloud() {
+            var points = new THREE.Geometry();
+            var material = new THREE.PointsMaterial({
+                color: 0xffffff,
+                size: 0.1,
+                map: new THREE.TextureLoader().load('textures/particle.png'),
+                transparent: true,
+                alphaTest: 0.5
+            });
 
-                cameraOrthographic.left = screenWidth / -2;
-                cameraOrthographic.right = screenWidth / 2;
-                cameraOrthographic.top = screenHeight / 2;
-                cameraOrthographic.bottom = screenHeight / -2;
-                cameraOrthographic.updateProjectionMatrix();
-            }
-
-            function initPointCloud() {
-                var points = new THREE.Geometry();
-                var material = new THREE.PointsMaterial({
-                    color: 0xffffff,
-                    size: 0.1,
-                    map: new THREE.TextureLoader().load('textures/particle.png'),
-                    transparent: true,
-                    alphaTest: 0.5
-                });
-
-                var size = 15;
-
-                for (var x = -size; x <= size; x++) {
-                    for (var y = -size; y <= size; y++) {
-                        for (var z = -size; z <= size; z++) {
-                            var point = new THREE.Vector3(x, y, z);
-                            points.vertices.push(point);
-                        }
+            for (var x = -size; x <= size; x++) {
+                for (var y = -size; y <= size; y++) {
+                    for (var z = -size; z <= size; z++) {
+                        var point = new THREE.Vector3(x, y, z);
+                        points.vertices.push(point);
                     }
                 }
-
-                particleGroup = new THREE.Points(points, material);
-                sceneMain.add(particleGroup);
             }
 
-            function updatePointCloud() {
-                var distance = cameraPerspective.position.distanceTo(particleGroup.position);
+            particleGroup = new THREE.Points(points, material);
+            sceneMain.add(particleGroup);
+        }
 
-                if (distance > 2) {
-                    var x = Math.floor(cameraPerspective.position.x);
-                    var y = Math.floor(cameraPerspective.position.y);
-                    var z = Math.floor(cameraPerspective.position.z);
+        function updatePointCloud() {
+            var distance = cameraPerspective.position.distanceTo(particleGroup.position);
 
-                    particleGroup.position.set(x, y, z);
+            if (distance > 2) {
+                var x = Math.floor(cameraPerspective.position.x);
+                var y = Math.floor(cameraPerspective.position.y);
+                var z = Math.floor(cameraPerspective.position.z);
+
+                particleGroup.position.set(x, y, z);
+            }
+        }
+
+        function initData() {
+            itemGroup = new THREE.Group();
+
+            refreshData(size * 2);
+
+            sceneMain.add(itemGroup);
+        }
+
+        function refreshData(range) {
+            // remove existing items
+            itemGroup.children = [];
+            hudGroup.children = [];
+
+            var geometry = new THREE.SphereGeometry(0.1, 32, 32);
+            var material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, transparent: true, opacity: 0.5 });
+
+            // Reset position
+            position = {
+                x: cameraPerspective.position.x,
+                y: cameraPerspective.position.y,
+                z: cameraPerspective.position.z
+            };
+
+            $.ajax({
+                url: '/api/items/' + range,
+                type: 'POST',
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                data: JSON.stringify({
+                    grid: grid,
+                    path: path,
+                    position: position
+                }),
+                success: function(response) {
+                    console.log(response);
+
+                    response.forEach(function(itemInstance) {
+                        var item = new THREE.Mesh(geometry, material);
+
+                        item.position.set(itemInstance.location.position.x,
+                            itemInstance.location.position.y,
+                            itemInstance.location.position.z);
+
+                        addHudData(item);
+
+                        itemGroup.add(item);
+                    });
                 }
-            }
+            });
+        }
 
-            function initData() {
-                itemGroup = new THREE.Group();
+        function updateData() {
+            itemGroup.children.forEach(function(data) {
+                data.rotation.x += 0.01;
+                data.rotation.y += 0.01;
+                data.rotation.z += 0.01;
+            });
+        }
 
-                var geometry = new THREE.SphereGeometry(0.1, 32, 32);
-                var material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, transparent: true, opacity: 0.5 });
+        function initHudData() {
+            hudGroup = new THREE.Group();
 
-                for (var i = 0; i < 15; i++) {
-                    var x = getRandom(-20, 20);
-                    var y = getRandom(-20, 20);
-                    var z = getRandom(-20, 20);
+            sceneHud.add(hudGroup);
+        }
 
-                    var data = new THREE.Mesh(geometry, material);
-                    data.position.set(x, y, z);
-
-                    addHudData(data);
-
-                    itemGroup.add(data);
-                }
-
-                sceneMain.add(itemGroup);
-            }
-
-            function updateData() {
-                itemGroup.children.forEach(function (data) {
-                    data.rotation.x += 0.01;
-                    data.rotation.y += 0.01;
-                    data.rotation.z += 0.01;
-                });
-            }
-
-            function initHudData() {
-                hudGroup = new THREE.Group();
-
-                sceneHud.add(hudGroup);
-            }
-
-            function addHudData(trackedItem) {
-                var hudGeometry = new THREE.ConeGeometry(0.1, 0.2, 16);
-                hudGeometry.rotateX(Math.PI * 0.5);
-                var hudMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+        function addHudData(trackedItem) {
+            var hudGeometry = new THREE.ConeGeometry(0.1, 0.2, 16);
+            hudGeometry.rotateX(Math.PI * 0.5);
+            var hudMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, side: THREE.DoubleSide });
 
 
-                var hudData = new THREE.Mesh(hudGeometry, hudMaterial);
+            var hudData = new THREE.Mesh(hudGeometry, hudMaterial);
 
-                hudData.scale.set(200, 200, 200);
-                hudData.visible = false;
-                hudData.tracked = trackedItem;
+            hudData.scale.set(200, 200, 200);
+            hudData.visible = false;
+            hudData.tracked = trackedItem;
 
-                hudGroup.add(hudData);
-            }
+            hudGroup.add(hudData);
+        }
 
-            function updateHudData() {
-                var centerPoint = new THREE.Vector3(0, 0, 1);
+        function updateHudData() {
+            var centerPoint = new THREE.Vector3(0, 0, 1);
 
-                hudGroup.children.forEach(function (data) {
-                    var target = data.tracked;
+            hudGroup.children.forEach(function(data) {
+                var target = data.tracked;
 
-                    if (checkCameraPlane(target, cameraPerspective)) {
-                        var position = findHudPosition(target, cameraPerspective);
+                if (checkCameraPlane(target, cameraPerspective)) {
+                    var position = findHudPosition(target, cameraPerspective);
 
-                        if (position.distanceTo(centerPoint) <= 400) {
-                            data.lookAt(cameraOrthographic);
-                        } else {
-                            data.lookAt(position);
-                            position.clampLength(0, 400);
-                        }
-
-                        data.position.set(position.x, position.y, position.z);
-                        data.visible = true;
+                    if (position.distanceTo(centerPoint) <= 400) {
+                        data.lookAt(cameraOrthographic);
                     } else {
-                        data.visible = false;
+                        data.lookAt(position);
+                        position.clampLength(0, 400);
                     }
-                });
-            }
 
-            function getRandom(min, max) {
-                var min = Math.ceil(min);
-                var max = Math.floor(max);
+                    data.position.set(position.x, position.y, position.z);
+                    data.visible = true;
+                } else {
+                    data.visible = false;
+                }
+            });
+        }
 
-                return Math.floor(Math.random() * (max - min)) + min;
-            }
+        function getRandom(min, max) {
+            var min = Math.ceil(min);
+            var max = Math.floor(max);
 
-            function checkCameraPlane(obj, camera) {
+            return Math.floor(Math.random() * (max - min)) + min;
+        }
 
-                var cameraDirection = camera.getWorldDirection();
-                var objectDirection = new THREE.Vector3(0, 0, 0);
-                objectDirection.subVectors(obj.position, camera.position);
+        function checkCameraPlane(obj, camera) {
 
-                return cameraDirection.dot(objectDirection) >= 0;
-            }
+            var cameraDirection = camera.getWorldDirection();
+            var objectDirection = new THREE.Vector3(0, 0, 0);
+            objectDirection.subVectors(obj.position, camera.position);
 
-            function findHudPosition(obj, camera) {
-                var vector = new THREE.Vector3();
+            return cameraDirection.dot(objectDirection) >= 0;
+        }
 
-                obj.updateMatrixWorld();
-                vector.setFromMatrixPosition(obj.matrixWorld);
-                vector.project(camera);
+        function findHudPosition(obj, camera) {
+            var vector = new THREE.Vector3();
 
-                vector.x *= (screenWidth / 2);
-                vector.y *= (screenHeight / 2);
-                vector.z = 1;
+            obj.updateMatrixWorld();
+            vector.setFromMatrixPosition(obj.matrixWorld);
+            vector.project(camera);
 
-                return vector;
-            }
+            vector.x *= (screenWidth / 2);
+            vector.y *= (screenHeight / 2);
+            vector.z = 1;
+
+            return vector;
+        }
     </script>
 </body>
 </html>

@@ -24,7 +24,7 @@ namespace Vouzamo.Grid.Core.Services
         {
             var items = new List<ItemInstance>();
 
-            for(int i = 1; i < range * 3; i++)
+            for(int i = 1; i < range; i++)
             {
                 var x = Random.NextDouble(location.Position.X - range, location.Position.X + range);
                 var y = Random.NextDouble(location.Position.Y - range, location.Position.Y + range);
