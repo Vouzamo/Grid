@@ -23,7 +23,7 @@
         var controls, renderer, clock;
         var itemGroup, particleGroup, hudGroup, size;
 
-        var grid, path, position, size;
+        var grid, path, yourPosition, size;
 
         $(document).ready(function() {
             init();
@@ -49,7 +49,7 @@
 
             grid = 'default';
             path = 'home';
-            position = {
+            yourPosition = {
                 x: 0,
                 y: 0,
                 z: 0
@@ -69,8 +69,12 @@
             controls.update(delta);
             updatePointCloud();
 
-            if (cameraPerspective.position.distanceTo(position) >= size) {
-                refreshData(size * 2);
+            var distance = cameraPerspective.position.distanceTo(yourPosition);
+            if (distance >= size * 2) {
+                yourPosition.x = cameraPerspective.position.x;
+                yourPosition.y = cameraPerspective.position.y;
+                yourPosition.z = cameraPerspective.position.z;
+                refreshData(size * 4);
             }
 
             updateData();
@@ -215,25 +219,14 @@
         function initData() {
             itemGroup = new THREE.Group();
 
-            refreshData(size * 2);
+            refreshData(size * 4);
 
             sceneMain.add(itemGroup);
         }
 
         function refreshData(range) {
-            // remove existing items
-            itemGroup.children = [];
-            hudGroup.children = [];
-
             var geometry = new THREE.SphereGeometry(0.1, 32, 32);
             var material = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true, transparent: true, opacity: 0.5 });
-
-            // Reset position
-            position = {
-                x: cameraPerspective.position.x,
-                y: cameraPerspective.position.y,
-                z: cameraPerspective.position.z
-            };
 
             $.ajax({
                 url: '/api/items/' + range,
@@ -243,11 +236,14 @@
                 data: JSON.stringify({
                     grid: grid,
                     path: path,
-                    position: position
+                    position: yourPosition
                 }),
                 success: function(response) {
-                    console.log(response);
+                    // Remove existing items
+                    itemGroup.children = [];
+                    hudGroup.children = [];
 
+                    // Place items
                     response.forEach(function(itemInstance) {
                         var item = new THREE.Mesh(geometry, material);
 

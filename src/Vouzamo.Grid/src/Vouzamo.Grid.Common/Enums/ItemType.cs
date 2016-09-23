@@ -1,4 +1,4 @@
-﻿namespace Vouzamo.Grid.Core.Enums
+﻿namespace Vouzamo.Grid.Common.Enums
 {
     public enum ItemType
     {

@@ -1,4 +1,4 @@
-﻿namespace Vouzamo.Grid.Core.Models
+﻿namespace Vouzamo.Grid.Common.Models
 {
     public class ItemInstance
     {

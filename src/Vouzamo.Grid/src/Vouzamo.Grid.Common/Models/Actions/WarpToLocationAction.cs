@@ -1,6 +1,6 @@
-﻿using Vouzamo.Grid.Core.Enums;
+﻿using Vouzamo.Grid.Common.Enums;
 
-namespace Vouzamo.Grid.Core.Models.Actions
+namespace Vouzamo.Grid.Common.Models.Actions
 {
     public class WarpToLocationAction : Action
     {

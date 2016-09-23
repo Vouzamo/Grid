@@ -12,7 +12,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Vouzamo.Grid.Web", "src\Vouzamo.Grid.Web\Vouzamo.Grid.Web.xproj", "{383A84D5-1CD9-42AF-986E-3EAF7E73445C}"
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Vouzamo.Grid.Core", "src\Vouzamo.Grid.Core\Vouzamo.Grid.Core.xproj", "{F8B23217-7A38-4DCC-82C2-515E5869392D}"
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Vouzamo.Grid.Common", "src\Vouzamo.Grid.Common\Vouzamo.Grid.Common.xproj", "{6E725A72-64EF-4617-9451-815CBF8F2EB3}"
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Vouzamo.Grid.Core", "src\Vouzamo.Grid.Core\Vouzamo.Grid.Core.xproj", "{608A1359-B647-4464-B7AF-ADD24E3F76D0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,16 +26,21 @@ Global
 		{383A84D5-1CD9-42AF-986E-3EAF7E73445C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{383A84D5-1CD9-42AF-986E-3EAF7E73445C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{383A84D5-1CD9-42AF-986E-3EAF7E73445C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F8B23217-7A38-4DCC-82C2-515E5869392D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F8B23217-7A38-4DCC-82C2-515E5869392D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F8B23217-7A38-4DCC-82C2-515E5869392D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F8B23217-7A38-4DCC-82C2-515E5869392D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E725A72-64EF-4617-9451-815CBF8F2EB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E725A72-64EF-4617-9451-815CBF8F2EB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E725A72-64EF-4617-9451-815CBF8F2EB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E725A72-64EF-4617-9451-815CBF8F2EB3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{608A1359-B647-4464-B7AF-ADD24E3F76D0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{608A1359-B647-4464-B7AF-ADD24E3F76D0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{608A1359-B647-4464-B7AF-ADD24E3F76D0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{608A1359-B647-4464-B7AF-ADD24E3F76D0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{383A84D5-1CD9-42AF-986E-3EAF7E73445C} = {3527DA93-65E2-434D-8E69-9E882EFA9EC7}
-		{F8B23217-7A38-4DCC-82C2-515E5869392D} = {3527DA93-65E2-434D-8E69-9E882EFA9EC7}
+		{6E725A72-64EF-4617-9451-815CBF8F2EB3} = {3527DA93-65E2-434D-8E69-9E882EFA9EC7}
+		{608A1359-B647-4464-B7AF-ADD24E3F76D0} = {3527DA93-65E2-434D-8E69-9E882EFA9EC7}
 	EndGlobalSection
 EndGlobal

@@ -1,7 +1,7 @@
 ﻿using System;
-using Vouzamo.Grid.Core.Enums;
+using Vouzamo.Grid.Common.Enums;
 
-namespace Vouzamo.Grid.Core.Models
+namespace Vouzamo.Grid.Common.Models
 {
     public interface IItem
     {

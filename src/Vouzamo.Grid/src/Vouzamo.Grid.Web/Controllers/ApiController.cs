@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Vouzamo.Grid.Core.Models;
-using Vouzamo.Grid.Core.Services;
+using Vouzamo.Grid.Common.Models;
+using Vouzamo.Grid.Common.Services;
 
 namespace Vouzamo.Grid.Web.Controllers
 {

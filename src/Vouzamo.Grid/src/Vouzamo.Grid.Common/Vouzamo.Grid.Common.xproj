@@ -7,8 +7,8 @@
 
   <Import Project="$(VSToolsPath)\DotNet\Microsoft.DotNet.Props" Condition="'$(VSToolsPath)' != ''" />
   <PropertyGroup Label="Globals">
-    <ProjectGuid>608a1359-b647-4464-b7af-add24e3f76d0</ProjectGuid>
-    <RootNamespace>Vouzamo.Grid.Core</RootNamespace>
+    <ProjectGuid>6e725a72-64ef-4617-9451-815cbf8f2eb3</ProjectGuid>
+    <RootNamespace>Vouzamo.Grid.Common</RootNamespace>
     <BaseIntermediateOutputPath Condition="'$(BaseIntermediateOutputPath)'=='' ">.\obj</BaseIntermediateOutputPath>
     <OutputPath Condition="'$(OutputPath)'=='' ">.\bin\</OutputPath>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
