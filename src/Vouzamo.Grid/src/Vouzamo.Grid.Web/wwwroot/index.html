@@ -10,11 +10,26 @@
             padding: 0px;
             overflow: hidden;
         }
+
+        .controls {
+            position: absolute;
+            bottom: 0px;
+            left: 0px;
+            width: 100%;
+            height: auto;
+            padding: 10px;
+        }
     </style>
     <script src="http://threejs.org/build/three.js"></script>
     <script src="http://threejs.org/examples/js/controls/FlyControls.js"></script>
+    <script src="http://threejs.org/examples/js/controls/DeviceOrientationControls.js"></script>
+    <script src="http://threejs.org/examples/js/effects/StereoEffect.js"></script>
 </head>
 <body>
+    <div class="controls">
+        <button onclick="toggleFullScreen()">Toggle FullScreen</button>
+        <button onclick="toggleVR()">Toggle VR</button>
+    </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
     <script>
         var container, screenWidth, screenHeight;
@@ -23,12 +38,55 @@
         var controls, renderer, clock;
         var itemGroup, particleGroup, hudGroup, size;
 
+        var stereoEffect;
+        var enableVR = true;
+
         var grid, path, yourPosition, size;
 
         $(document).ready(function() {
             init();
             animate();
         });
+
+        function toggleVR() {
+            enableVR = !enableVR;
+        }
+
+        function isFullScreen() {
+            return (document.fullScreenElement && document.fullScreenElement !== null)
+                 || document.mozFullScreen
+                 || document.webkitIsFullScreen;
+        }
+
+
+        function requestFullScreen(element) {
+            if (element.requestFullscreen)
+                element.requestFullscreen();
+            else if (element.msRequestFullscreen)
+                element.msRequestFullscreen();
+            else if (element.mozRequestFullScreen)
+                element.mozRequestFullScreen();
+            else if (element.webkitRequestFullscreen)
+                element.webkitRequestFullscreen();
+        }
+
+        function exitFullScreen() {
+            if (document.exitFullscreen)
+                document.exitFullscreen();
+            else if (document.msExitFullscreen)
+                document.msExitFullscreen();
+            else if (document.mozCancelFullScreen)
+                document.mozCancelFullScreen();
+            else if (document.webkitExitFullscreen)
+                document.webkitExitFullscreen();
+        }
+
+        function toggleFullScreen() {
+            if (isFullScreen())
+                cancelFullScreen();
+            else
+                requestFullScreen(document.documentElement);
+        }
 
         function init() {
             container = document.createElement('div');
@@ -57,6 +115,21 @@
 
             initData();
 
+            function setOrientationControls(e) {
+                // If device orientation is not available, return.
+                if (!e.alpha) {
+                    return;
+                }
+
+                // Create controls for mobile.
+                controls = new THREE.DeviceOrientationControls(cameraPerspective, true);
+                controls.connect();
+                controls.update();
+
+                window.removeEventListener('deviceorientation', setOrientationControls, true);
+            }
+            window.addEventListener('deviceorientation', setOrientationControls, true);
+
             window.addEventListener('resize', initWindow, false);
         }
 
@@ -66,7 +139,8 @@
             var delta = clock.getDelta();
 
             // Any changes to the scene will be initiated from here
-            controls.update(delta);
+            controls.update(delta); 
+
             updatePointCloud();
 
             var distance = cameraPerspective.position.distanceTo(yourPosition);
@@ -92,6 +166,8 @@
             renderer.setClearColor(0x000000, 0);
             renderer.autoClear = false;
             renderer.setPixelRatio(window.devicePixelRatio);
+
+            stereoEffect = new THREE.StereoEffect(renderer);
 
             container.appendChild(renderer.domElement);
         }
@@ -157,9 +233,26 @@
 
         function renderScenes() {
             renderer.clear();
-            renderer.render(sceneMain, cameraPerspective);
-            renderer.clearDepth();
-            renderer.render(sceneHud, cameraOrthographic);
+
+            if (enableVR) {
+                stereoEffect.render(sceneMain, cameraPerspective);
+            } else {
+                renderer.render(sceneMain, cameraPerspective);
+
+            }
+
+            if (enableVR) {
+                //renderer.setViewport(0, 0, screenWidth / 2, screenHeight);
+                //renderer.render(sceneHud, cameraOrthographic);
+
+                //renderer.setViewport(screenWidth / 2, 0, screenWidth / 2, screenHeight);
+                //renderer.render(sceneHud, cameraOrthographic);
+            } else {
+                renderer.setViewport(0, 0, screenWidth, screenHeight);
+                renderer.clearDepth();
+
+                renderer.render(sceneHud, cameraOrthographic);
+            }
         }
 
         function initWindow() {
@@ -167,6 +260,8 @@
             screenHeight = window.innerHeight;
 
             renderer.setSize(screenWidth, screenHeight);
+            stereoEffect.setSize(screenWidth, screenHeight);
+
             resetCameras();
         }
 
