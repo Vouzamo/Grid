@@ -11,9 +11,9 @@
             Item = item;
         }
 
-        public IAction Invoke()
+        public IItemAction Invoke()
         {
-            return Item.Invoke(Location);
+            return Item.Type.Invoke(this);
         }
     }
 }

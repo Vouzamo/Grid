@@ -2,11 +2,11 @@
 
 namespace Vouzamo.Grid.Common.Models.Actions
 {
-    public class Action : IAction
+    public class ItemAction : IItemAction
     {
         public ActionType Type { get; protected set; }
 
-        public Action(ActionType type)
+        public ItemAction(ActionType type)
         {
             Type = type;
         }

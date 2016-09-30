@@ -17,9 +17,9 @@ namespace Vouzamo.Grid.Common.Models.Items
             WarpLocation = warpLocation;
         }
 
-        public override IAction Invoke(ILocation location)
+        public override IItemAction Invoke(ILocation location)
         {
-            return new WarpToLocationAction(WarpLocation);
+            return new WarpToLocationItemAction(WarpLocation);
         }
     }
 }

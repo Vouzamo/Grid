@@ -2,7 +2,7 @@
 
 namespace Vouzamo.Grid.Common.Models
 {
-    public interface IAction
+    public interface IItemAction
     {
         ActionType Type { get; }
     }

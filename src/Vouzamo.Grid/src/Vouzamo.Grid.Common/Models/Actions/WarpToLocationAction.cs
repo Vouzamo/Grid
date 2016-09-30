@@ -2,11 +2,11 @@
 
 namespace Vouzamo.Grid.Common.Models.Actions
 {
-    public class WarpToLocationAction : Action
+    public class WarpToLocationItemAction : ItemAction
     {
         public ILocation WarpLocation { get; protected set; }
 
-        public WarpToLocationAction(ILocation warpLocation) : base(ActionType.WarpToLocation)
+        public WarpToLocationItemAction(ILocation warpLocation) : base(ActionType.WarpToLocation)
         {
             WarpLocation = warpLocation;
         }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Vouzamo.Grid.Common.Enums;
 
 namespace Vouzamo.Grid.Common.Models.Items
@@ -8,19 +9,22 @@ namespace Vouzamo.Grid.Common.Models.Items
         public Guid Id { get; protected set; }
 
         public string Name { get; protected set; }
-        public ItemType Type { get; protected set; }
+        public IItemType Type { get; protected set; }
+
+        public List<ItemFieldValue> Values { get; }
 
         private Item()
         {
             Id = Guid.NewGuid();
+            Values = new List<ItemFieldValue>();
         }
 
-        protected Item(string name, ItemType type) : this()
+        protected Item(string name, IItemType type) : this()
         {
             Name = name;
             Type = type;
         }
 
-        public abstract IAction Invoke(ILocation location);
+        public abstract IItemAction Invoke(ILocation location);
     }
 }

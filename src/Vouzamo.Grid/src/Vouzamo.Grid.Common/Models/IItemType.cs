@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace Vouzamo.Grid.Common.Models
 {
-    public interface IItem
+    public interface IItemType
     {
         Guid Id { get; }
 
         string Name { get; }
-        IItemType Type { get; }
+        List<ItemField> Fields { get; }
 
-        List<ItemFieldValue> Values { get; }
+        IItemAction Invoke(ItemInstance itemInstance);
     }
 }

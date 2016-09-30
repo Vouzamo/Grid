@@ -1,0 +1,57 @@
+{
+	"namespace": {
+		"prefix": "js:namespace",
+		"body": [
+			"${namespace} = (function(module) {",
+			"    ",
+			"    // todo",
+			"    ",
+			"    return module;",
+			"}(${namespace} || {}));"
+		],
+		"description": "namespace (module)"
+	},
+	"class": {
+		"prefix": "js:class (no inheritance)",
+		"body": [
+			"// constructor",
+			"module.${class} = function() {",
+			"",
+			"}",
+			"",
+			"// prototype",
+			"module.${class}.prototype = (function(base) {",
+			"    var prototype = Object.create(base);",
+			"    ",
+			"    prototype.constructor = module.${class};",
+			"    ",
+			"    // methods",
+			"    ",
+			"    return prototype;",
+			"}({}));"
+		],
+		"description": "class (no inheritance)"
+	},
+	"class (with inheritance)": {
+		"prefix": "js:class (with inheritance)",
+		"body": [
+			"// constructor",
+			"module.${class} = function() {",
+			"    ${base}.call(this);",
+			"",
+			"}",
+			"",
+			"// prototype",
+			"module.${class}.prototype = (function(base) {",
+			"    var prototype = Object.create(base);",
+			"    ",
+			"    prototype.constructor = module.${class};",
+			"    ",
+			"    // methods",
+			"    ",
+			"    return prototype;",
+			"}(${base}.prototype));"
+		],
+		"description": "class (with inheritance)"
+	}
+}
