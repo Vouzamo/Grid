@@ -1,30 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
-using Vouzamo.Grid.Common.Enums;
 
 namespace Vouzamo.Grid.Common.Models.Items
 {
-    public abstract class Item : IItem
+    public class Item : IItem
     {
         public Guid Id { get; protected set; }
-
         public string Name { get; protected set; }
         public IItemType Type { get; protected set; }
+        public Location Location { get; protected set; }
+        public List<FieldValue> Values { get; }
 
-        public List<ItemFieldValue> Values { get; }
-
-        private Item()
+        public Item(string name, IItemType type, Location location)
         {
             Id = Guid.NewGuid();
-            Values = new List<ItemFieldValue>();
-        }
-
-        protected Item(string name, IItemType type) : this()
-        {
             Name = name;
             Type = type;
+            Location = location;
+            Values = new List<FieldValue>();
         }
 
-        public abstract IItemAction Invoke(ILocation location);
+        public virtual IItemAction Invoke(Location location)
+        {
+            return Type.Invoke(location, this);
+        }
     }
 }

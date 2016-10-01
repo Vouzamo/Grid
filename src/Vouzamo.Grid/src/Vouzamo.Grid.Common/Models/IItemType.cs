@@ -8,8 +8,8 @@ namespace Vouzamo.Grid.Common.Models
         Guid Id { get; }
 
         string Name { get; }
-        List<ItemField> Fields { get; }
+        List<IField> Fields { get; }
 
-        IItemAction Invoke(ItemInstance itemInstance);
+        IItemAction Invoke(Location location, IItem item);
     }
 }

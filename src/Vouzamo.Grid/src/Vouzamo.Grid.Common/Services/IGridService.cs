@@ -5,6 +5,6 @@ namespace Vouzamo.Grid.Common.Services
 {
     public interface IGridService
     {
-        IEnumerable<ItemInstance> GetItems(ILocation location, double range);
+        IEnumerable<IItem> GetItems(Location location, double range);
     }
 }

@@ -3,26 +3,16 @@ using Vouzamo.Grid.Common.Enums;
 
 namespace Vouzamo.Grid.Common.Models
 {
-    public class ItemField
+    public interface IField
     {
-        public Guid Id { get; protected set; }
+        string Name { get; }
+        FieldType Type { get; }
+        bool Multivalue { get; }
+        bool Mandatory { get; }
+    }
 
-        public string Name { get; protected set; }
-        public FieldType Type { get; protected set; }
-        public bool Multivalue { get; set; }
-        public bool Mandatory { get; set; }
-
-        protected ItemField()
-        {
-            Id = Guid.NewGuid();
-            Multivalue = false;
-            Mandatory = false;
-        }
-
-        public ItemField(string name, FieldType type = FieldType.Text) : this()
-        {
-            Name = name;
-            Type = type;
-        }
+    public interface IField<T> : IField where T : IComparable<T>
+    {
+        bool Validate(string raw, out T value);
     }
 }

@@ -101,27 +101,11 @@ namespace Vouzamo.Grid.Core.Services
             }
         }
 
-        public IEnumerable<ItemInstance> GetItems(ILocation location, double range)
+        public IEnumerable<IItem> GetItems(Location location, double range)
         {
-            var items = new List<ItemInstance>();
-
             var json = Client.ExecuteStoredProcedureAsync<string>(UriFactory.CreateStoredProcedureUri("grid", "locations", "rangeQuery"), location.Position.X, location.Position.Y, location.Position.Z, range).Result;
 
-            var itemLocations = JsonConvert.DeserializeObject<List<ItemLocation>>(json, Settings);
-
-            foreach (var itemLocation in itemLocations)
-            {
-                var itemDocument = Client.ReadDocumentAsync(UriFactory.CreateDocumentUri("grid", "items", itemLocation.ItemId.ToString())).Result;
-
-                var itemJson = itemDocument.Resource.ToString();
-
-                var item = JsonConvert.DeserializeObject<Item>(itemJson, Settings);
-
-                if (item != null)
-                {
-                    items.Add(new ItemInstance(itemLocation, item));
-                }
-            }
+            var items = JsonConvert.DeserializeObject<List<Item>>(json, Settings);
 
             return items;
         }
