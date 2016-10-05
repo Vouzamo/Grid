@@ -9,6 +9,14 @@
             margin: 0px;
             padding: 0px;
             overflow: hidden;
+
+            -webkit-touch-callout:none;
+            -webkit-user-select:none;
+            -khtml-user-select:none;
+            -moz-user-select:none;
+            -ms-user-select:none;
+            user-select:none;
+            -webkit-tap-highlight-color:rgba(0,0,0,0);
         }
 
         .controls {
@@ -35,13 +43,15 @@
         var container, screenWidth, screenHeight;
         var sceneMain, sceneHud;
         var cameraPerspective, cameraOrthographic;
-        var controls, renderer, clock;
+        var controls, orientationControls, renderer, clock;
         var itemGroup, particleGroup, hudGroup, size;
 
         var stereoEffect;
         var enableVR = true;
 
         var grid, path, yourPosition, size;
+
+        var autoMove = false;
 
         $(document).ready(function() {
             init();
@@ -57,7 +67,6 @@
                  || document.mozFullScreen
                  || document.webkitIsFullScreen;
         }
-
 
         function requestFullScreen(element) {
             if (element.requestFullscreen)
@@ -122,15 +131,27 @@
                 }
 
                 // Create controls for mobile.
-                controls = new THREE.DeviceOrientationControls(cameraPerspective, true);
-                controls.connect();
-                controls.update();
+                orientationControls = new THREE.DeviceOrientationControls(cameraPerspective, true);
+                orientationControls.connect();
+                orientationControls.update();
 
                 window.removeEventListener('deviceorientation', setOrientationControls, true);
             }
             window.addEventListener('deviceorientation', setOrientationControls, true);
 
             window.addEventListener('resize', initWindow, false);
+
+            window.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                autoMove = true;
+                console.log("move");
+            }, true)
+
+            window.addEventListener('mouseup', function (e) {
+                e.preventDefault();
+                autoMove = false;
+                console.log("stop");
+            }, true)
         }
 
         function animate() {
@@ -139,7 +160,14 @@
             var delta = clock.getDelta();
 
             // Any changes to the scene will be initiated from here
-            controls.update(delta); 
+            if (orientationControls != null) {
+                orientationControls.update();
+            }
+            controls.update(delta);
+
+            if (autoMove) {
+                cameraPerspective.translateZ(-5 * delta);
+            }
 
             updatePointCloud();
 
@@ -168,6 +196,7 @@
             renderer.setPixelRatio(window.devicePixelRatio);
 
             stereoEffect = new THREE.StereoEffect(renderer);
+            stereoEffect.setEyeSeparation(0.01);
 
             container.appendChild(renderer.domElement);
         }
@@ -211,6 +240,7 @@
             controls.rollSpeed = Math.PI / 12;
             controls.domElement = container;
             controls.dragToLook = true;
+            controls.autoForward = false;
         }
 
         function initCameras() {

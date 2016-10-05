@@ -2,16 +2,15 @@
 using System.Collections.Generic;
 using Vouzamo.Grid.Common.Models;
 using Vouzamo.Grid.Common.Services;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
-using Microsoft.Azure.Documents.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Vouzamo.Grid.Common.Models.Items;
-using Vouzamo.Grid.Core.Infrastructure;
+using Vouzamo.Grid.Common.Models.ItemTypes;
+using Newtonsoft.Json.Linq;
 
 namespace Vouzamo.Grid.Core.Services
 {
@@ -19,7 +18,6 @@ namespace Vouzamo.Grid.Core.Services
     {
         private DocumentClient Client { get; }
         private Database GridDatabase { get; set; }
-        private DocumentCollection ItemLocations { get; set; }
         private DocumentCollection Items { get; set; }
 
         private JsonSerializerSettings Settings { get; set; }
@@ -35,16 +33,15 @@ namespace Vouzamo.Grid.Core.Services
 
             GridDatabase = CreateDatabaseIfNotExists("grid").Result;
 
-            ItemLocations = CreateDocumentCollectionIfNotExists("grid", "locations").Result;
             Items = CreateDocumentCollectionIfNotExists("grid", "items").Result;
 
-            //var item = new WarpItem("warp 1", new Location("default", "default", Point3D.Zero));
+            //var warpItemType = new WarpItemType();
+            //var warpItem = warpItemType.CreateItem("warp 1", new Location("default", "default", new Point3D(-5, -5, -5)), new Location("default", "default", Point3D.Zero));
 
-            //Client.CreateDocumentAsync(Items.SelfLink, item, Settings).Wait();
+            //var json = JsonConvert.SerializeObject(warpItem, Formatting.Indented, Settings);
+            //var document = JObject.Parse(json);
 
-            //var itemLocation = new ItemLocation("default", "default", new Point3D(-5, -5, -5), item.Id);
-
-            //Client.CreateDocumentAsync(ItemLocations.SelfLink, itemLocation, Settings).Wait();
+            //Client.CreateDocumentAsync(Items.SelfLink, document).Wait();
         }
 
         private async Task<Database> CreateDatabaseIfNotExists(string databaseName)
@@ -103,7 +100,7 @@ namespace Vouzamo.Grid.Core.Services
 
         public IEnumerable<IItem> GetItems(Location location, double range)
         {
-            var json = Client.ExecuteStoredProcedureAsync<string>(UriFactory.CreateStoredProcedureUri("grid", "locations", "rangeQuery"), location.Position.X, location.Position.Y, location.Position.Z, range).Result;
+            var json = Client.ExecuteStoredProcedureAsync<string>(UriFactory.CreateStoredProcedureUri("grid", "items", "rangeQuery"), location.Position.X, location.Position.Y, location.Position.Z, range).Result;
 
             var items = JsonConvert.DeserializeObject<List<Item>>(json, Settings);
 
